@@ -1,5 +1,5 @@
 """
-
+Represents a Wi-Fi station and its transmission state.
 """
 
 from collections import deque
@@ -23,4 +23,7 @@ class Station:
         # Successful frames sent
         self.successes = 0     
         # transmission attempts
-        self.attempts = 0      
+        self.attempts = 0  
+
+        # Delay of each successfully transmitted frame, measured in slots
+        self.delays = []    
