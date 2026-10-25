@@ -68,19 +68,19 @@ The work is split so each person's code can be built and tested on its own: P1 t
 
 #### Days 1-2: Setup and interfaces
 
-- [ ] **Both:** Create the repo, add this README, `requirements.txt`, `.gitignore`, and the folder layout.
-- [ ] **Both:** Agree on the interfaces: station fields, event types, the results dictionary returned by a run, and the channel API (how a station starts a transmission, asks whether the channel is busy, is notified of busy/idle changes, and learns the outcome).
-- [ ] **Both:** Decide the time unit (integer slot counts) and random-seed handling.
-- [ ] **P2:** Write `station.py`, `config.py`, and Poisson arrival generation.
+- [x] **Both:** Create the repo, add this README, `requirements.txt`, `.gitignore`, and the folder layout.
+- [x] **Both:** Agree on the interfaces: station fields, event types, the results dictionary returned by a run, and the channel API (how a station starts a transmission, asks whether the channel is busy, is notified of busy/idle changes, and learns the outcome).
+- [x] **Both:** Decide the time unit (integer slot counts) and random-seed handling.
+- [x] **P2:** Write `station.py`, `config.py`, and Poisson arrival generation.
 
 #### Days 2-4: Station logic and channel, built independently
 
-- [ ] **P1:** Implement the event queue (`heapq`) and event types: arrival, backoff expiry, transmission start/end, ACK.
-- [ ] **P1:** Implement backoff selection, DIFS sensing, freeze/resume, and ACK after SIFS.
-- [ ] **P1:** Implement collision handling and binary exponential backoff, tested against a stub channel (single collision domain).
-- [ ] **P1:** Write the first deterministic test case with a hand-built event timeline.
-- [ ] **P2:** Implement `channel.py`: busy/idle tracking, overlap and collision detection, and NAV, tested with scripted transmissions.
-- [ ] **P2:** Write `metrics.py` against a stub result so it is ready when the engine is.
+- [x] **P1:** Implement the event queue (`heapq`) and event types: arrival, backoff expiry, transmission start/end, ACK.
+- [x] **P1:** Implement backoff selection, DIFS sensing, freeze/resume, and ACK after SIFS.
+- [x] **P1:** Implement collision handling and binary exponential backoff, tested against a stub channel (single collision domain).
+- [x] **P1:** Write the first deterministic test case with a hand-built event timeline.
+- [x] **P2:** Implement `channel.py`: busy/idle tracking, overlap and collision detection, and NAV, tested with scripted transmissions.
+- [x] **P2:** Write `metrics.py` against a stub result so it is ready when the engine is.
 - [ ] **Milestone (Day 4):** single-collision-domain DCF matches the first hand-built timeline. If not, fix this before moving on.
 
 #### Days 5-7: Integration, hidden terminals, RTS/CTS, and Part I results
