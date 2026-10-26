@@ -51,8 +51,10 @@ class Channel:
         return bool(self.active) or self.control_busy_until > slot
 
     # Start a frame and detect overlaps.
-    def transmit(self, station_id, slot):
-        end = slot + self.frame_slots
+    def transmit(self, station_id, slot, duration_slots=None):
+        if duration_slots is None:
+            duration_slots = self.frame_slots
+        end = slot + duration_slots
         collided = False
 
         # Mark overlapping transmissions as collided.

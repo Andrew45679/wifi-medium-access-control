@@ -1,12 +1,14 @@
 import csv
 import math
 from pathlib import Path
+from types import SimpleNamespace
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from src.channel import Channel
 from src.config import Config
+from src.metrics import Metrics
 from src.simulator import run
 
 
@@ -59,23 +61,18 @@ def calculate_metrics():
                     channel=channel,
                 )
 
-                all_delays_ms = [
-                    delay * cfg.slot_us / 1000
+                all_delays = [
+                    delay
                     for station in stations
                     for delay in station.delays
                 ]
-                station_throughputs = [
-                    station.successes
-                    * cfg.data_bytes
-                    * 8
-                    / cfg.sim_time_s
-                    / 1_000_000
-                    for station in stations
-                ]
                 total_attempts = sum(station.attempts for station in stations)
-                fairness_denominator = n * sum(
-                    throughput**2 for throughput in station_throughputs
+                collision_totals = SimpleNamespace(
+                    attempts=total_attempts,
+                    collisions=channel.collided_attempts,
                 )
+                combined_delays = SimpleNamespace(delays=all_delays)
+                station_throughputs = Metrics.per_station_throughput(stations, cfg)
 
                 results.append(
                     {
@@ -84,30 +81,25 @@ def calculate_metrics():
                         "seed": seed,
                         "stations": stations,
                         "station_throughputs": station_throughputs,
-                        "aggregate_throughput": sum(station_throughputs),
+                        "aggregate_throughput": Metrics.network_throughput(
+                            stations, cfg
+                        ),
                         "collided_attempts": channel.collided_attempts,
                         "total_attempts": total_attempts,
-                        "collision_probability": (
-                            channel.collided_attempts / total_attempts
-                            if total_attempts
-                            else 0
+                        "collision_probability": Metrics.collision_probability(
+                            collision_totals
                         ),
                         "mean_delay": (
-                            float(np.mean(all_delays_ms))
-                            if all_delays_ms
-                            else 0
+                            Metrics.mean_packet_delay(combined_delays)
+                            * cfg.slot_us
+                            / 1000
                         ),
                         "percentile_95_delay": (
-                            float(np.percentile(all_delays_ms, 95))
-                            if all_delays_ms
-                            else 0
+                            Metrics.percentile_packet_delay(combined_delays)
+                            * cfg.slot_us
+                            / 1000
                         ),
-                        "jains_fairness": (
-                            sum(station_throughputs) ** 2
-                            / fairness_denominator
-                            if fairness_denominator
-                            else 0
-                        ),
+                        "jains_fairness": Metrics.jains_fairness_index(stations),
                     }
                 )
 
