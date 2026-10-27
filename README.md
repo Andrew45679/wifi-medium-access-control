@@ -37,7 +37,7 @@ The work is split so each person's code can be built and tested on its own: P1 t
 |------|-------|-------|
 | `src/simulator.py` | P1 | Event queue, main loop, event types |
 | `src/dcf.py` | P1 | Backoff selection, freeze/resume, DIFS/SIFS/ACK sequencing, binary exponential backoff, RTS/CTS frame sequence |
-| `src/channel.py` | P2 | Sensing matrix (hidden terminals), overlap and collision detection, busy/idle notifications, NAV |
+| `src/channel.py` | P2 | Optional sensing matrix (listener rows, transmitter columns) for hidden terminals; overlapping transmissions still collide at the AP |
 | `src/station.py` | Both (Day 1) | Shared interface. Changes after Day 1 need both people to agree |
 | `src/config.py` | Both (Day 1) | Simulation parameters from Table 1 of the assignment, plus any added (e.g. OFDMA overhead) |
 | `src/metrics.py` | P2 | Throughput, collision probability, delay, Jain's index |
