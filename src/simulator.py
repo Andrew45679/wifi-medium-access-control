@@ -18,6 +18,18 @@ from src.dcf import (
 from src.station import Station
 
 
+def _notify_busy_stations(stations, slot, cfg, channel):
+    for station in stations:
+        if channel.is_busy(station.id, slot):
+            on_busy(station, slot, cfg)
+
+
+def _notify_idle_stations(stations, slot, cfg, channel, sched):
+    for station in stations:
+        if not channel.is_busy(station.id, slot):
+            on_idle(station, slot, cfg, sched)
+
+
 # Generate arrivals and run the event queue.
 def run(cfg, n, rate, seed, channel, arrivals=None, backoffs=None, rts_cts=False):
     # Validate inputs.
@@ -87,14 +99,10 @@ def run(cfg, n, rate, seed, channel, arrivals=None, backoffs=None, rts_cts=False
 
         elif event == "transmission_start":        
             # Start transmission and notify stations if the channel was idle.
-            was_busy = channel.is_physically_busy(slot)
             station.transmitting = True
             station.attempts += 1
             end_slot = channel.transmit(station_id, slot)
-            if not was_busy:
-                # Freeze other countdowns while the channel is busy.
-                for waiting_station in stations:
-                    on_busy(waiting_station, slot, cfg)
+            _notify_busy_stations(stations, slot, cfg, channel)
             schedule_event(sched, end_slot, 0, station_id, "transmission_end",)
 
         elif event == "transmission_end":
@@ -104,34 +112,25 @@ def run(cfg, n, rate, seed, channel, arrivals=None, backoffs=None, rts_cts=False
                 station.awaiting_ack = True
                 ack_slot = slot + cfg.sifs_slots + cfg.ack_slots
                 channel.reserve_control(ack_slot)
+                _notify_busy_stations(stations, slot, cfg, channel)
                 schedule_event(sched, ack_slot, 1, station_id, "ack",)
             else:
                 # Collided frames retry without an ACK.
                 on_result(station, slot, False, cfg, rng, backoffs, channel, sched)
-            if not channel.is_physically_busy(slot):
-                # Resume waiting backoffs when the channel is idle.
-                for waiting_station in stations:
-                    on_idle(waiting_station, slot, cfg, sched)
+            _notify_idle_stations(stations, slot, cfg, channel, sched)
 
         elif event == "ack":
             # Record success when the ACK arrives.
             channel.release_control(slot)
             on_result(station, slot, True, cfg, rng, backoffs, channel, sched)
-            if not channel.is_physically_busy(slot):
-                # Resume waiting backoffs after the ACK.
-                for waiting_station in stations:
-                    on_idle(waiting_station, slot, cfg, sched)
+            _notify_idle_stations(stations, slot, cfg, channel, sched)
 
         elif event == "rts_start":
             # Start RTS transmission and notify stations if the channel was idle.
-            was_busy = channel.is_physically_busy(slot)
             station.transmitting = True
             station.attempts += 1
             end_slot = channel.transmit(station_id, slot, duration_slots=cfg.rts_slots)
-            if not was_busy:
-                # Freeze other countdowns while the channel is busy.
-                for waiting_station in stations:
-                    on_busy(waiting_station, slot, cfg)
+            _notify_busy_stations(stations, slot, cfg, channel)
             schedule_event(sched, end_slot, 0, station_id, "rts_end",)
 
         elif event == "rts_end":
@@ -143,15 +142,13 @@ def run(cfg, n, rate, seed, channel, arrivals=None, backoffs=None, rts_cts=False
                 end_slot = slot + whole_slots
                 channel.reserve_nav(station_id, end_slot)
                 channel.reserve_control(end_slot)
+                _notify_busy_stations(stations, slot, cfg, channel)
                 schedule_event(sched, cts_slot, 1, station_id, "cts",)
             else:
                 # Collided RTS frames retry without a CTS.
                 on_result(station, slot, False, cfg, rng, backoffs, channel, sched)
 
-                if not channel.is_physically_busy(slot):
-                    # Resume waiting backoffs when the channel is idle.
-                    for waiting_station in stations:
-                        on_idle(waiting_station, slot, cfg, sched)
+                _notify_idle_stations(stations, slot, cfg, channel, sched)
 
         elif event == "cts":
             # Record the CTS and schedule the data transmission after SIFS.
