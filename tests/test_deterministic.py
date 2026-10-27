@@ -185,3 +185,83 @@ def test_nav_reservation_defers_other_stations():
 
     assert channel.is_busy(station_id=1, slot=19)
     assert not channel.is_busy(station_id=1, slot=20)
+
+
+def test_rts_cts_exchange_completes_data_and_ack():
+    cfg = Config(
+        sim_time_s=0.0002,
+        difs_slots=1,
+        sifs_slots=1,
+        rts_slots=2,
+        cts_slots=2,
+        ack_slots=2,
+    )
+    station = run(
+        cfg=cfg,
+        n=1,
+        rate=0,
+        seed=1,
+        channel=Channel(frame_slots=5),
+        arrivals=[(0, 0)],
+        backoffs=0,
+        rts_cts=True,
+    )[0]
+
+    assert station.successes == 1
+    assert station.attempts == 1
+    assert station.delays == [15]
+    assert station.cw == cfg.cw0
+
+
+def test_colliding_rts_frames_trigger_backoff_and_retry():
+    cfg = Config(
+        sim_time_s=0.00012,
+        difs_slots=1,
+        sifs_slots=1,
+        rts_slots=2,
+        cts_slots=2,
+        ack_slots=2,
+        cw0=2,
+    )
+    stations = run(
+        cfg=cfg,
+        n=2,
+        rate=0,
+        seed=1,
+        channel=Channel(frame_slots=5),
+        arrivals=[(0, 0), (1, 0)],
+        backoffs=0,
+        rts_cts=True,
+    )
+
+    assert all(station.attempts >= 2 for station in stations)
+    assert all(station.collisions >= 1 for station in stations)
+    assert all(station.cw > cfg.cw0 for station in stations)
+    assert all(len(station.queue) == 1 for station in stations)
+
+
+def test_rts_cts_exchange_reserves_nav_for_other_stations():
+    cfg = Config(
+        sim_time_s=0.0002,
+        difs_slots=1,
+        sifs_slots=1,
+        rts_slots=2,
+        cts_slots=2,
+        ack_slots=2,
+    )
+    channel = Channel(frame_slots=5)
+    run(
+        cfg=cfg,
+        n=2,
+        rate=0,
+        seed=1,
+        channel=channel,
+        arrivals=[(0, 0)],
+        backoffs=0,
+        rts_cts=True,
+    )
+
+    nav_end = channel.nav_until[0]
+    assert nav_end > 0
+    assert channel.is_busy(station_id=1, slot=nav_end - 1)
+    assert not channel.is_busy(station_id=1, slot=nav_end)
