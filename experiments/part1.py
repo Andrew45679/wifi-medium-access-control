@@ -123,10 +123,10 @@ def save_results(results):
         writer.writerows(results)
 
 
-def plot_metric(results, metric, station_id, ylabel, title, filename):
-    """Plot one station's metric against arrival rate for each scenario."""
+def plot_metric(results, metric, rts_cts, ylabel, title, filename):
+    """Plot both stations and topologies for one RTS/CTS setting."""
     for topology in topologies:
-        for rts_cts in rts_cts_options:
+        for station_id, station_name in enumerate(("A", "B")):
             averages = []
             for arrival_rate in arrival_rates:
                 values = [
@@ -139,18 +139,17 @@ def plot_metric(results, metric, station_id, ylabel, title, filename):
                 ]
                 averages.append(np.mean(values))
 
-            mode = "with RTS/CTS" if rts_cts else "without RTS/CTS"
             plt.plot(
                 arrival_rates,
                 averages,
                 marker="o",
-                label=f"{topology.replace('_', ' ')}, {mode}",
+                label=f"Station {station_name} - {topology.replace('_', ' ')}",
             )
 
-    station_name = "A" if station_id == 0 else "B"
     plt.xlabel("Arrival rate, λ (frames/s)")
     plt.ylabel(ylabel)
-    plt.title(title.format(station=station_name))
+    mode = "with RTS/CTS" if rts_cts else "without RTS/CTS"
+    plt.title(f"{title} {mode}")
     plt.xticks(arrival_rates)
     plt.grid(True, alpha=0.3)
     plt.legend()
@@ -160,25 +159,26 @@ def plot_metric(results, metric, station_id, ylabel, title, filename):
 
 
 def make_plots(results):
-    """Generate throughput and collision-probability figures for A and B."""
+    """Generate metric figures split by RTS/CTS mode."""
     figures_dir = root / "figures"
     figures_dir.mkdir(parents=True, exist_ok=True)
-    for station_id, station_name in enumerate(("A", "B")):
+    for rts_cts in rts_cts_options:
+        mode = "with_rts_cts" if rts_cts else "without_rts_cts"
         plot_metric(
             results,
             "throughput_mbps",
-            station_id,
-            f"Station {station_name} throughput (Mbps)",
-            "CSMA/CA Station {station} Throughput",
-            f"part1_{station_name}_throughput.png",
+            rts_cts,
+            "Throughput (Mbps)",
+            "CSMA/CA Throughput",
+            f"part1_throughput_{mode}.png",
         )
         plot_metric(
             results,
             "collision_probability",
-            station_id,
-            f"Station {station_name} collision probability",
-            "CSMA/CA Station {station} Collision Probability",
-            f"part1_{station_name}_collision_probability.png",
+            rts_cts,
+            "Collision probability",
+            "CSMA/CA Collision Probability",
+            f"part1_collision_probability_{mode}.png",
         )
 
 
