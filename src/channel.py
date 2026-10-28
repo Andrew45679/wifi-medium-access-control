@@ -2,9 +2,17 @@
 # Tracks channel use, collisions, and reservations.
 class Channel:
     # Set the frame duration.
-    def __init__(self, frame_slots=50):
+    def __init__(self, frame_slots=50, sensing_matrix=None):
         # Frame duration in slots.
         self.frame_slots = frame_slots
+
+        if sensing_matrix is not None:
+            matrix = tuple(tuple(row) for row in sensing_matrix)
+            if any(len(row) != len(matrix) for row in matrix):
+                raise ValueError("sensing_matrix must be square")
+            self.sensing_matrix = matrix
+        else:
+            self.sensing_matrix = None
 
         # Active frames by station: (start, end).
         self.active = {}
@@ -18,18 +26,36 @@ class Channel:
 
     # Check if this station senses a busy channel.
     def is_busy(self, station_id, slot):
-        # Check other stations' transmissions.
+        # Check transmissions this station can sense.
         for other_id, (start, end) in self.active.items():
-            if other_id != station_id and start <= slot < end:
+            if (
+                other_id != station_id
+                and self._can_sense(station_id, other_id)
+                and start <= slot < end
+            ):
                 return True
 
         # Check other stations' NAV.
         for other_id, until in self.nav_until.items():
-            if other_id != station_id and until > slot:
+            if (
+                other_id != station_id
+                and self._can_sense(station_id, other_id)
+                and until > slot
+            ):
                 return True
 
         # Check control activity.
         return self.control_busy_until > slot
+
+    def _can_sense(self, listener_id, transmitter_id):
+        if self.sensing_matrix is None:
+            return True
+        if not (
+            0 <= listener_id < len(self.sensing_matrix)
+            and 0 <= transmitter_id < len(self.sensing_matrix)
+        ):
+            raise ValueError("station id is outside sensing_matrix")
+        return bool(self.sensing_matrix[listener_id][transmitter_id])
 
     # Set or extend a station's NAV.
     def reserve_nav(self, station_id, until_slot):

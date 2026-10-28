@@ -37,7 +37,7 @@ The work is split so each person's code can be built and tested on its own: P1 t
 |------|-------|-------|
 | `src/simulator.py` | P1 | Event queue, main loop, event types |
 | `src/dcf.py` | P1 | Backoff selection, freeze/resume, DIFS/SIFS/ACK sequencing, binary exponential backoff, RTS/CTS frame sequence |
-| `src/channel.py` | P2 | Sensing matrix (hidden terminals), overlap and collision detection, busy/idle notifications, NAV |
+| `src/channel.py` | P2 | Optional sensing matrix (listener rows, transmitter columns) for hidden terminals; overlapping transmissions still collide at the AP |
 | `src/station.py` | Both (Day 1) | Shared interface. Changes after Day 1 need both people to agree |
 | `src/config.py` | Both (Day 1) | Simulation parameters from Table 1 of the assignment, plus any added (e.g. OFDMA overhead) |
 | `src/metrics.py` | P2 | Throughput, collision probability, delay, Jain's index |
@@ -81,16 +81,16 @@ The work is split so each person's code can be built and tested on its own: P1 t
 - [x] **P1:** Write the first deterministic test case with a hand-built event timeline.
 - [x] **P2:** Implement `channel.py`: busy/idle tracking, overlap and collision detection, and NAV, tested with scripted transmissions.
 - [x] **P2:** Write `metrics.py` against a stub result so it is ready when the engine is.
-- [ ] **Milestone (Day 4):** single-collision-domain DCF matches the first hand-built timeline. If not, fix this before moving on.
+- [x] **Milestone (Day 4):** single-collision-domain DCF matches the first hand-built timeline. If not, fix this before moving on.
 
 #### Days 5-7: Integration, hidden terminals, RTS/CTS, and Part I results
 
 > The most likely time sink. Budget extra time here.
 
-- [ ] **Both:** Integrate P1's station logic with P2's channel (budget half a day for bugs at the join).
-- [ ] **P2:** Add the sensing matrix so A and B cannot sense each other but both reach the AP, with partial-overlap collisions at the AP.
-- [ ] **P1:** Implement the RTS/CTS frame sequence, including RTS collisions and backoff, using P2's NAV handling.
-- [ ] **P2:** Write the channel test cases (hidden terminals, NAV) as deterministic tests.
+- [x] **Both:** Integrate P1's station logic with P2's channel (budget half a day for bugs at the join).
+- [x] **P2:** Add the sensing matrix so A and B cannot sense each other but both reach the AP, with partial-overlap collisions at the AP.
+- [x] **P1:** Implement the RTS/CTS frame sequence, including RTS collisions and backoff, using P2's NAV handling.
+- [x] **P2:** Write the channel test cases (hidden terminals, NAV) as deterministic tests.
 - [ ] **P2:** Build `part1.py`: 6 values of λ x 2 topologies x with/without RTS/CTS x multiple seeds.
 - [ ] **P2:** Generate the Part I figures (throughput of A and B vs. λ; collision probability vs. λ).
 - [ ] **P1:** Start drafting the Simulator design section of the report.
@@ -104,13 +104,13 @@ The work is split so each person's code can be built and tested on its own: P1 t
 
 #### Days 8-10: Dense networks (Part II)
 
-- [ ] **Both:** Confirm the engine runs for any N in a single collision domain.
-- [ ] **P2:** Build `part2.py`: N in {2, 5, 10, 20, 40} x Λ in {300, 800} x multiple seeds, with per-station λᵢ = Λ/N.
-- [ ] **P2:** Add mean and 95th-percentile delay and Jain's Fairness Index to the output.
-- [ ] **P2:** Generate the four Part II figures (throughput, collision probability, delay, fairness vs. N).
+- [x] **Both:** Confirm the engine runs for any N in a single collision domain.
+- [x] **P2:** Build `part2.py`: N in {2, 5, 10, 20, 40} x Λ in {300, 800} x multiple seeds, with per-station λᵢ = Λ/N.
+- [x] **P2:** Add mean and 95th-percentile delay and Jain's Fairness Index to the output.
+- [x] **P2:** Generate the four Part II figures (throughput, collision probability, delay, fairness vs. N).
 - [ ] **Both:** Run the full sweep in parallel with `multiprocessing`, starting early so it finishes in time.
 - [ ] **P1:** Write the Part I analysis (collisions, RTS/CTS, hidden terminals).
-- [ ] **Milestone (Day 10):** all required figures (1-6) generated.
+- [x] **Milestone (Day 10):** all required figures (1-6) generated.
 
 #### Days 10-12: OFDMA extra credit (Part III)
 

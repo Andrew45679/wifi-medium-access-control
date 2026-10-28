@@ -52,6 +52,55 @@ def test_non_overlapping_transmissions_do_not_collide():
     assert channel.end_transmission(1) is True
 
 
+def test_hidden_stations_do_not_sense_each_other_but_overlap_collides():
+    channel = Channel(
+        frame_slots=5,
+        sensing_matrix=[
+            [False, False],
+            [False, False],
+        ],
+    )
+
+    channel.transmit(station_id=0, slot=10)
+    assert not channel.is_busy(station_id=1, slot=11)
+    channel.transmit(station_id=1, slot=12)
+
+    assert channel.end_transmission(0) is False
+    assert channel.end_transmission(1) is False
+
+
+def test_partial_overlap_at_ap_collides():
+    channel = Channel(frame_slots=5)
+
+    channel.transmit(station_id=0, slot=10)
+    channel.transmit(station_id=1, slot=14)
+
+    assert channel.end_transmission(0) is False
+    assert channel.end_transmission(1) is False
+
+
+def test_hidden_station_backoff_is_not_frozen_by_other_station():
+    cfg = Config(sim_time_s=0.00008, difs_slots=2, cw0=2)
+    stations = run(
+        cfg=cfg,
+        n=2,
+        rate=0,
+        seed=1,
+        channel=Channel(
+            frame_slots=5,
+            sensing_matrix=[
+                [False, False],
+                [False, False],
+            ],
+        ),
+        arrivals=[(0, 0), (1, 0)],
+        backoffs={0: 0, 1: 1},
+    )
+
+    assert [station.attempts for station in stations] == [1, 1]
+    assert [station.collisions for station in stations] == [1, 1]
+
+
 def test_backoff_is_selected_inside_contention_window():
     cfg = Config()
     station = Station(station_id=0, cw0=cfg.cw0)
